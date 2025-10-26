@@ -90,6 +90,15 @@ class WordPressClient:
         category = await self.request_data.aget(url)
         return CategoryData(**category)
 
+    async def get_category_by_name(self, category_name: str) -> CategoryData:
+        url = self.base_url + f"/wp-json/wp/v2/categories?search={category_name}"
+        search_results = await self.request_data.aget(url)
+
+        for result in search_results:
+            if result.get("name") == category_name:
+                return CategoryData(**result)
+        return None
+
     async def get_tags(self) -> list[TagData]:
         """Get all tags.
         Returns:
@@ -109,6 +118,14 @@ class WordPressClient:
         tag = await self.request_data.aget(url)
         return TagData(**tag)
 
+    async def get_tag_by_name(self, tag_name: str) -> TagData:
+        url = self.base_url + f"/wp-json/wp/v2/tags?search={tag_name}"
+        search_results = await self.request_data.aget(url)
+        for result in search_results:
+            if result.get("name") == tag_name:
+                return TagData(**result)
+        return None
+
     async def create_tag(self, tag: Tag) -> TagData:
         """Create a tag.
         Args:
@@ -116,6 +133,10 @@ class WordPressClient:
         Returns:
             A TagData object.
         """
+        existing_tag = await self.get_tag_by_name(tag.name)
+        if existing_tag:
+            return existing_tag
+
         url = self.base_url + "/wp-json/wp/v2/tags"
         token = await self.login_jwt()
         header = {
@@ -133,15 +154,17 @@ class WordPressClient:
         Returns:
             A Category object.
         """
-        url = self.base_url + "/wp-json/wp/v2/categories"
-        token = await self.login_jwt()
-        header = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {token.token}",
-        }
+        existing_category = await self.get_category_by_name(category.name)
+        if existing_category:
+            return existing_category
         return CategoryData(
             **await self.request_data.apost(
-                url, data=category.model_dump(), headers=header
+                url=self.base_url + "/wp-json/wp/v2/categories",
+                data=category.model_dump(),
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {(await self.login_jwt()).token}",
+                },
             )
         )
 
