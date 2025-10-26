@@ -7,13 +7,7 @@ from autanimos_agent.agent import  run_agent
 
 wp_client = get_wp_client()
 
-user_prompt = """
-    عنوان: آموزش مکالمه زبان با هوش مصنوعی در اپ LangAgent
-    کلمه کلیدی: آموزش مکالمه زبان با هوش مصنوعی
-    هدف: آگاهی
-    توضیح: معرفی مزایای استفاده از هوش مصنوعی در یادگیری مکالمه
-    حداقل ۸۰۰ کلمه
-"""
+
 
 
 async def main():
@@ -43,6 +37,13 @@ async def main():
     # created_post = await wp_client.create_post(post)
     # pprint(created_post)
 
+    user_prompt = """
+    عنوان: آموزش مکالمه زبان با هوش مصنوعی در اپ LangAgent
+    کلمه کلیدی: آموزش مکالمه زبان با هوش مصنوعی
+    هدف: آگاهی
+    توضیح: معرفی مزایای استفاده از هوش مصنوعی در یادگیری مکالمه
+     100 کلمه
+    """
     print("---------------Start Agent-----------------")
     result = await run_agent(user_prompt)
 

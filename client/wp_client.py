@@ -4,6 +4,7 @@ from client.request_data import BaseRequest
 from domain.wordpress import (
     CategoryData,
     CreateWordPressPostData,
+    GeneratePostData,
     TagData,
     WordPressPostData,
     Category,
@@ -121,7 +122,9 @@ class WordPressClient:
             "Content-Type": "application/json",
             "Authorization": f"Bearer {token.token}",
         }
-        return await self.request_data.apost(url, data=tag.model_dump(), headers=header)
+        return TagData(
+            **await self.request_data.apost(url, data=tag.model_dump(), headers=header)
+        )
 
     async def create_category(self, category: Category) -> CategoryData:
         """Create a category.
@@ -142,7 +145,7 @@ class WordPressClient:
             )
         )
 
-    async def create_post(self, post: CreateWordPressPostData) -> WordPressPostData:
+    async def create_post(self, post: CreateWordPressPostData) -> SimplePostData:
         """Create a post.
         Args:
             post(CreateWordPressPostData): The post to create.
@@ -158,7 +161,37 @@ class WordPressClient:
         response = await self.request_data.apost(
             url, data=post.model_dump(), headers=header
         )
-        return await self._create_post_object(response)
+        return await self._create_post_object(response, simple=True)
+
+    async def create_post_with_categories_and_tags(
+        self, post: GeneratePostData
+    ) -> bool:
+        """Create a post with categories and tags.
+        Args:
+            post(GeneratePostData): The post data object containing title, content, tags, and categories.
+        Returns:
+            A WordPressPostData object.
+        """
+        categories = []
+        tags = []
+        if post.categories:
+            categories = [
+                (await self.create_category(category)).id
+                for category in post.categories
+            ]
+        if post.tags:
+            tags = [(await self.create_tag(tag)).id for tag in post.tags]
+
+        wp_post_dict = {
+            "title": post.title,
+            "content": post.content,
+            "slug": post.slug,
+            "date": post.date,
+            "categories": categories,
+            "tags": tags,
+        }
+        response = await self.create_post(CreateWordPressPostData(**wp_post_dict))
+        return bool(response.id)
 
     async def login_jwt(self) -> Token:
         url = self.base_url + "/wp-json/jwt-auth/v1/token"
@@ -186,9 +219,7 @@ class WordPressClient:
         }
 
         if simple:
-            obj = SimplePostData(
-                **post_data, categories=category_ids, tags=tag_ids
-            )
+            obj = SimplePostData(**post_data, categories=category_ids, tags=tag_ids)
             obj.content = None
             return obj
 
