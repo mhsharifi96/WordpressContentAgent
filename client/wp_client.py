@@ -1,5 +1,7 @@
 from functools import cache
 import os
+
+from langchain_openai import OpenAIEmbeddings
 from client.request_data import BaseRequest
 from domain.wordpress import (
     CategoryData,
@@ -12,20 +14,25 @@ from domain.wordpress import (
     Token,
     SimplePostData,
 )
-
+from client.tag_category_embedding import EmbeddingHandler
 from dotenv import load_dotenv
+
+import settings
 
 load_dotenv()
 
 
 class WordPressClient:
     def __init__(
-        self, request_data: BaseRequest, base_url: str, username: str, password: str
+        self, request_data: BaseRequest, base_url: str, username: str, password: str,
+        embedding_handler: EmbeddingHandler
     ):
         self.request_data = request_data
         self.base_url = base_url
         self.username = username
         self.password = password
+        self.embedding_handler = embedding_handler
+
 
     async def get_posts(self) -> list[SimplePostData]:
         """Get all posts.
@@ -78,6 +85,7 @@ class WordPressClient:
         return [
             CategoryData(**category) for category in await self.request_data.aget(url)
         ]
+    
 
     async def get_category(self, category_id: int) -> CategoryData:
         """Get a category by its ID.
@@ -125,6 +133,10 @@ class WordPressClient:
             if result.get("name") == tag_name:
                 return TagData(**result)
         return None
+    
+    async def check_tag_embedding(self, tag: Tag) -> TagData | None:
+        tags = await self.get_tags()
+        return await self.embedding_handler.check_tag_exists_vector(tag.name, tags)
 
     async def create_tag(self, tag: Tag) -> TagData:
         """Create a tag.
@@ -136,7 +148,10 @@ class WordPressClient:
         existing_tag = await self.get_tag_by_name(tag.name)
         if existing_tag:
             return existing_tag
-
+        existing_tag = await self.check_tag_embedding(tag)
+        if existing_tag:
+            return existing_tag
+        
         url = self.base_url + "/wp-json/wp/v2/tags"
         token = await self.login_jwt()
         header = {
@@ -146,6 +161,10 @@ class WordPressClient:
         return TagData(
             **await self.request_data.apost(url, data=tag.model_dump(), headers=header)
         )
+    
+    async def check_category_embedding(self, category: Category) -> CategoryData | None:
+        categories = await self.get_categories()
+        return await self.embedding_handler.check_category_exists_vector(category.name, categories)
 
     async def create_category(self, category: Category) -> CategoryData:
         """Create a category.
@@ -157,6 +176,10 @@ class WordPressClient:
         existing_category = await self.get_category_by_name(category.name)
         if existing_category:
             return existing_category
+        existing_category = await self.check_category_embedding(category)
+        if existing_category:
+            return existing_category
+        
         return CategoryData(
             **await self.request_data.apost(
                 url=self.base_url + "/wp-json/wp/v2/categories",
@@ -266,8 +289,15 @@ class WordPressClient:
 
 @cache
 def get_wp_client() -> WordPressClient:
+    embeddings = OpenAIEmbeddings(
+        model="text-embedding-3-small",
+        api_key=settings.OPENAI_API_KEY,
+        base_url=settings.OPENAI_BASE_URL,
+    )
+    embedding_handler = EmbeddingHandler(settings.WP_BASE_URL, embeddings)
+
     request_data = BaseRequest()
     username = os.getenv("WP_USERNAME")
     password = os.getenv("WP_PASSWORD")
     base_url = os.getenv("WP_BASE_URL")
-    return WordPressClient(request_data, base_url, username, password)
+    return WordPressClient(request_data, base_url, username, password, embedding_handler)

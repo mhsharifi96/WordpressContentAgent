@@ -8,8 +8,8 @@ import settings
 @cache
 def get_model():
     model = init_chat_model(
-        model="gpt-4o-mini",
-        model_provider="openai",
+        model=settings.CHAT_MODEL,
+        model_provider=settings.MODEL_PROVIDER,
         api_key=settings.OPENAI_API_KEY,
         base_url=settings.OPENAI_BASE_URL,
     )
