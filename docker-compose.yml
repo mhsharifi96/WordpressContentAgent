@@ -1,0 +1,14 @@
+
+services:
+  scheduler:
+    build: .
+    container_name: scheduler_app
+    command: python scheduler.py
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"  # optional — remove if not exposing a web port
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
