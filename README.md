@@ -11,6 +11,7 @@ An intelligent WordPress content management agent powered by LangChain and OpenA
 - 📊 **LangGraph Integration**: Structured agent workflow with tool calling capabilities
 - 📝 **Persian/English Support**: Supports content generation in multiple languages
 - 🔍 **Langfuse Monitoring**: Track and monitor AI agent executions
+- 🎯 ** scheduler Script **: create new post every day
 
 ## Requirements
 
