@@ -11,7 +11,7 @@ async def run_task(row):
     prompt = f"""
     Title: {row['title']}
     Goal: {row['goal']}
-    Short explanation: {row['short explaination']}
+    Short explanation: {row['short explanation']}
     minimum words: 700
     SEO optimization: yes
     language: Persian
