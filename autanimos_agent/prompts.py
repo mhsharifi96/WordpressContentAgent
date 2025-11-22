@@ -75,7 +75,7 @@ AGENT_SYSTEM_PROMPT = """You are an expert WordPress content creator and SEO spe
      - Category ID
      - Tag IDs
      - Excerpt/meta description
-     - Status (usually 'draft' for review)
+     - Status `publish`
 
 ## Important Notes:
 - Always check existing content before creating new categories/tags

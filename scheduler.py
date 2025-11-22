@@ -15,7 +15,9 @@ async def run_task(row):
     minimum words: 700
     SEO optimization: yes
     language: Persian
-    output format: html
+    output format: html , just use html tags that sutable for seo and readability.
+    do not use <html> , <body> , <head>
+    the reuslt use for create a new post in wordpress.
     """
     result = await run_agent(prompt)
     print(result)

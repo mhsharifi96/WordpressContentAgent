@@ -60,6 +60,7 @@ class CreateWordPressPostData(BaseWordPressPost):
     id: int | None = None
     categories: list[int] | None = None
     tags: list[int] | None = None
+    status: str = "publish"
 
 
 class Token(BaseModel):
